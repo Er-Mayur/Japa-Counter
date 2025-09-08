@@ -2,7 +2,7 @@
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/a13f9593-5d8b-46a8-b063-c14fb4dd3b1b
+**URL**: https://japa-counter-pied.vercel.app/
 
 ## How can I edit this code?
 
