@@ -88,14 +88,12 @@ export const useAppSettings = () => {
   // Text utilities based on language setting
   const getText = (hindi: string, english: string) => {
     switch (settings.language) {
-      case 'hi':
-        return hindi;
       case 'en':
         return english;
-      case 'both':
-        return `${hindi} / ${english}`;
+      case 'hi':
+        return hindi;
       default:
-        return `${hindi} / ${english}`;
+        return english;
     }
   };
 

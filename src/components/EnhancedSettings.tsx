@@ -361,15 +361,14 @@ export const EnhancedSettings = () => {
             <Label>{getText("भाषा प्राथमिकता", "Language Preference")}</Label>
             <Select
               value={settings.language}
-              onValueChange={(value: "hi" | "en" | "both") => updateSetting("language", value)}
+              onValueChange={(value: "en" | "hi" ) => updateSetting("language", value)}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="hi">हिंदी</SelectItem>
                 <SelectItem value="en">English</SelectItem>
-                <SelectItem value="both">दोनों / Both</SelectItem>
+                <SelectItem value="hi">हिंदी</SelectItem>
               </SelectContent>
             </Select>
           </div>

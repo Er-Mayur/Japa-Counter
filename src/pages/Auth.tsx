@@ -67,6 +67,7 @@ const Auth = () => {
         title: "पंजीकरण सफल / Registration Successful!",
         description: "कृपया अपना ईमेल जांचें / Please check your email to verify your account",
       });
+      navigate("/");
     }
     
     setIsLoading(false);
