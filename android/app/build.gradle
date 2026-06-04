@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace "com.ganak.ganak"
+    namespace "com.ganak.counter"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.ganak.ganak"
+        applicationId "com.counter.counter"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

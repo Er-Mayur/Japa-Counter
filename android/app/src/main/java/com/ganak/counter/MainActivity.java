@@ -1,4 +1,4 @@
-package com.ganak.ganak;
+package com.ganak.counter;
 
 import com.getcapacitor.BridgeActivity;
 
