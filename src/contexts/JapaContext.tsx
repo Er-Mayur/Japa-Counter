@@ -125,15 +125,18 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [settingsUpdatedAt, setSettingsUpdatedAt] = useState<string | null>(null);
 
-  const SETTINGS_STORAGE_KEY = "appSettings";
-  const SETTINGS_UPDATED_AT_KEY = "appSettingsUpdatedAt";
+  // ── User-scoped storage key helpers ─────────────────────────────────────────
+  // All localStorage keys are prefixed with the current user id so that
+  // signing in as a different user NEVER leaks data from a previous session.
+  const SETTINGS_STORAGE_KEY = user ? `appSettings_${user.id}` : "appSettings";
+  const SETTINGS_UPDATED_AT_KEY = user ? `appSettingsUpdatedAt_${user.id}` : "appSettingsUpdatedAt";
+
   const getStorageKey = useCallback((dateStr: string) => {
     const parsed = new Date(dateStr);
-    if (isNaN(parsed.getTime())) {
-      return dateStr;
-    }
-    return parsed.toDateString();
-  }, []);
+    const base = isNaN(parsed.getTime()) ? dateStr : parsed.toDateString();
+    // Prefix with user id so different users never share the same key
+    return user ? `${user.id}_${base}` : base;
+  }, [user]);
 
   const getUpdatedAtMs = useCallback((value?: string | null) => {
     if (!value) return 0;
@@ -144,10 +147,8 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const persistSettingsToLocal = useCallback((nextSettings: AppSettings, updatedAt: string) => {
     localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(nextSettings));
     localStorage.setItem(SETTINGS_UPDATED_AT_KEY, updatedAt);
-    Object.entries(nextSettings).forEach(([key, value]) => {
-      localStorage.setItem(key, JSON.stringify(value));
-    });
-  }, []);
+    // No longer write individual flat keys to avoid cross-user pollution
+  }, [SETTINGS_STORAGE_KEY, SETTINGS_UPDATED_AT_KEY]);
 
   const loadSettingsFromLocal = useCallback(() => {
     const cachedSettings = localStorage.getItem(SETTINGS_STORAGE_KEY);
@@ -165,20 +166,9 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    const loaded: Record<string, unknown> = { ...defaultSettings };
-    (Object.keys(defaultSettings) as Array<keyof AppSettings>).forEach((key) => {
-      const saved = localStorage.getItem(key);
-      if (saved) {
-        try {
-          loaded[key] = JSON.parse(saved);
-        } catch (e) {
-          console.error(`Error parsing setting ${key}`, e);
-        }
-      }
-    });
-
-    return { settings: loaded as unknown as AppSettings, updatedAt: cachedUpdatedAt };
-  }, []);
+    // No fallback to un-scoped flat keys — that was the source of cross-user leakage
+    return { settings: { ...defaultSettings }, updatedAt: cachedUpdatedAt };
+  }, [SETTINGS_STORAGE_KEY, SETTINGS_UPDATED_AT_KEY]);
 
   const upsertSettingsToDb = useCallback(async (nextSettings: AppSettings, updatedAt: string) => {
     if (!user) return;
@@ -241,6 +231,8 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const safeMalas = Number.isFinite(malas) ? (malas as number) : Math.floor(jaaps / 108);
     const storageKey = getStorageKey(dateStr);
     const safeUpdatedAt = updatedAt || new Date().toISOString();
+    // Use user-scoped key so different users never share the same history cache
+    const japaHistoryKey = user ? `japaHistory_${user.id}` : 'japaHistory';
 
     setHistory(prev => {
       const existingIndex = prev.findIndex(h => h.date === dateStr);
@@ -253,7 +245,7 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
         updated.push(entry);
       }
 
-      localStorage.setItem('japaHistory', JSON.stringify(updated));
+      localStorage.setItem(japaHistoryKey, JSON.stringify(updated));
       return updated;
     });
 
@@ -264,25 +256,27 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     localStorage.setItem(`japaCount_${storageKey}`, jaaps.toString());
     localStorage.setItem(`japaUpdatedAt_${storageKey}`, safeUpdatedAt);
-  }, [getStorageKey]);
+  }, [getStorageKey, user]);
 
   const syncPendingData = useCallback(async () => {
     if (!user) return;
 
-    // Collect all local dates that have japa data
+    // Collect all local dates that have japa data — only keys for the current user
+    const userKeyPrefix = `japaCount_${user.id}_`;
     const localDates: { storageKey: string; formattedDate: string; localCount: number; localUpdatedAtRaw: string | null }[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && key.startsWith('japaCount_')) {
-        const dateStr = key.replace('japaCount_', '');
+      if (key && key.startsWith(userKeyPrefix)) {
+        // Strip the prefix to get the date portion
+        const datePart = key.slice(userKeyPrefix.length);
         const localCount = parseInt(localStorage.getItem(key) || '0');
-        const date = new Date(dateStr);
+        const date = new Date(datePart);
         if (isNaN(date.getTime())) continue;
         localDates.push({
-          storageKey: dateStr,
+          storageKey: key.replace('japaCount_', ''), // full scoped key minus "japaCount_"
           formattedDate: format(date, 'yyyy-MM-dd'),
           localCount,
-          localUpdatedAtRaw: localStorage.getItem(`japaUpdatedAt_${dateStr}`),
+          localUpdatedAtRaw: localStorage.getItem(`japaUpdatedAt_${user.id}_${datePart}`),
         });
       }
     }
@@ -435,21 +429,18 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [currentDate]);
 
-  // Load settings from localStorage on mount
-  useEffect(() => {
-    const { settings: loadedSettings, updatedAt } = loadSettingsFromLocal();
-    setSettings(loadedSettings);
-    if (updatedAt) {
-      setSettingsUpdatedAt(updatedAt);
-    }
-  }, [loadSettingsFromLocal]);
+  // Settings are loaded inside the user-change effect below (with user scoping).
+  // No on-mount settings load here — that was a source of cross-user data leakage.
 
   // Load data from Supabase when user changes
   useEffect(() => {
     if (!user) {
+      // ── Clear ALL in-memory state so the next user starts clean ─────────────
       setLoading(false);
       setTodayJaaps(0);
       setHistory([]);
+      setSettings(defaultSettings);
+      setSettingsUpdatedAt(null);
       return;
     }
 
@@ -468,8 +459,9 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setTodayJaaps(localTodayJaaps);
       }
 
-      // Try to load cached history
-      const cachedHistory = localStorage.getItem('japaHistory');
+      // Try to load user-scoped cached history
+      const japaHistoryKey = `japaHistory_${user.id}`;
+      const cachedHistory = localStorage.getItem(japaHistoryKey);
       if (cachedHistory) {
         try {
           setHistory(JSON.parse(cachedHistory));
@@ -477,6 +469,11 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error parsing cached history', e);
         }
       }
+
+      // Load user-scoped settings from localStorage
+      const { settings: localSettings, updatedAt: localSettingsUpdatedAt } = loadSettingsFromLocal();
+      setSettings(localSettings);
+      if (localSettingsUpdatedAt) setSettingsUpdatedAt(localSettingsUpdatedAt);
 
       try {
         // Fetch last 365 days only — enough for streak + stats, prevents unlimited growth
@@ -498,8 +495,9 @@ export const JapaProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
 
         setHistory(formattedHistory);
-        // Cache the history
-        localStorage.setItem('japaHistory', JSON.stringify(formattedHistory));
+        // Cache the history under a user-scoped key
+        const japaHistoryKey = `japaHistory_${user.id}`;
+        localStorage.setItem(japaHistoryKey, JSON.stringify(formattedHistory));
 
         formattedHistory.forEach((session) => {
           const storageKey = getStorageKey(session.date);

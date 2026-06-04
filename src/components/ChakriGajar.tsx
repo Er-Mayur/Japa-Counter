@@ -282,11 +282,14 @@ export const ChakriGajar = ({ onActiveSlotChange }: { onActiveSlotChange?: (acti
   const handleJoinGroup = async (code: string) => {
     if (!user || !code.trim()) return;
     setLoading(true);
-    const { data } = await supabase.from("cg_groups").select("id").eq("code", code.trim()).maybeSingle();
-    if (data) {
+    // Use the SECURITY DEFINER RPC so non-members can look up a group
+    // by its invite code without needing broad cg_groups SELECT access.
+    const { data } = await supabase.rpc("cg_find_group_by_code", { lookup_code: code.trim() });
+    const groupId = Array.isArray(data) && data.length > 0 ? (data[0] as { id: string }).id : null;
+    if (groupId) {
       await supabase.from("cg_members")
-        .upsert({ group_id: data.id, user_id: user.id, role: "member" }, { onConflict: "group_id,user_id", ignoreDuplicates: true });
-      await loadGroups(data.id);
+        .upsert({ group_id: groupId, user_id: user.id, role: "member" }, { onConflict: "group_id,user_id", ignoreDuplicates: true });
+      await loadGroups(groupId);
       setScreen("home");
     }
     setLoading(false);
