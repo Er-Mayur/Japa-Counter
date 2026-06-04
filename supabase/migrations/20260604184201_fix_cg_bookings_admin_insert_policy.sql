@@ -27,3 +27,4 @@ WITH CHECK (
   AND cg_bookings.date >= (now() AT TIME ZONE 'Asia/Kolkata')::date
 
 );
+
