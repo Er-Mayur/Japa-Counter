@@ -118,13 +118,6 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-    /* Allow copy/paste everywhere — do NOT set user-select:none on body */
-  }
-
-  /* Prevent the native iOS long-press callout only on tappable/interactive
-     elements where it would be disruptive, not on text content. */
-  button, a, img, [role="button"] {
-    -webkit-touch-callout: none;
   }
 
   img {
