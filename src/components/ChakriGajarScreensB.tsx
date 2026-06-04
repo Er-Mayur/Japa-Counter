@@ -67,6 +67,9 @@ export const GroupDetailsScreen = ({ group, events, eventStats = {}, members, is
     members: getText("सदस्य", "Members"),
     stats: getText("आंकड़े", "Stats"),
   };
+  const sortedEvents = [...events].sort(
+  (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+);
 
   useEffect(() => {
     setEditName(group.name);
@@ -355,7 +358,7 @@ export const GroupDetailsScreen = ({ group, events, eventStats = {}, members, is
               </CardContent>
             </Card>
           ) : (
-            events.map(ev => {
+            sortedEvents.map(ev => {
               const isToday = ev.date === todayStr;  // IST-correct
               const isPast = ev.date < todayStr;
               const stats = eventStats[ev.id];
