@@ -68,8 +68,8 @@ export const GroupDetailsScreen = ({ group, events, eventStats = {}, members, is
     stats: getText("आंकड़े", "Stats"),
   };
   const sortedEvents = [...events].sort(
-  (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-);
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
 
   useEffect(() => {
     setEditName(group.name);
@@ -466,7 +466,7 @@ export const GroupDetailsScreen = ({ group, events, eventStats = {}, members, is
                       <div className="font-medium text-foreground text-sm">{label}</div>
                       <div className="text-xs text-muted-foreground">{roleLabel}</div>
                     </div>
-                    {m.role === "admin" }
+                    {m.role === "admin"}
                   </div>
                 );
               })
@@ -477,19 +477,41 @@ export const GroupDetailsScreen = ({ group, events, eventStats = {}, members, is
 
       {tab === "stats" && (
         <div className="grid grid-cols-2 gap-4">
-          {[
-            [getText("कुल माला", "Total Malas"), Math.floor((group.totalJaap ?? 0) / 108).toLocaleString(), "text-primary"],
-            [getText("सदस्य", "Members"), members.length.toString(), "text-secondary"],
-            [getText("सत्र", "Sessions"), events.length.toString(), "text-accent"],
-            [getText("एडमिन", "Admins"), members.filter(m => m.role === "admin").length.toString(), "text-orange-500"],
-          ].map(([label, val, cls]) => (
-            <Card key={label as string} className="spiritual-card">
-              <CardContent className="p-4 text-center">
-                <div className={`text-2xl font-bold mb-1 ${cls}`}>{val}</div>
-                <div className="text-sm text-muted-foreground">{label}</div>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Total Malas - Full Width */}
+          <Card className="spiritual-card col-span-2">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold mb-1 text-primary">
+                {Math.floor((group.totalJaap ?? 0) / 108).toLocaleString()}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {getText("कुल माला", "Total Malas")}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Members */}
+          <Card className="spiritual-card">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold mb-1 text-secondary">
+                {members.length}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {getText("सदस्य", "Members")}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Sessions */}
+          <Card className="spiritual-card">
+            <CardContent className="p-4 text-center">
+              <div className="text-2xl font-bold mb-1 text-accent">
+                {events.length}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                {getText("सत्र", "Sessions")}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -872,8 +894,8 @@ export const ScheduleListScreen = ({ event, bookings, members, userId, currentHo
 
           return (
             <Card key={label} className={`spiritual-card transition-all ${isSlotAllPast ? "opacity-50"
-                : isActiveSlot ? "ring-2 ring-green-400/70"
-                  : isExp ? "ring-1 ring-primary/40" : ""
+              : isActiveSlot ? "ring-2 ring-green-400/70"
+                : isExp ? "ring-1 ring-primary/40" : ""
               }`}>
               {/* Slot header — click to expand (disabled if all past) */}
               <button
@@ -946,10 +968,10 @@ export const ScheduleListScreen = ({ event, bookings, members, userId, currentHo
                       <div
                         key={hour}
                         className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${isPast ? "border-border/30 bg-muted/10 opacity-50"
-                            : isSel ? "border-primary/50 bg-primary/5"
-                              : bookedByMe ? "border-border bg-muted/20"
-                                : blockedByOtherGroup ? "border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-800/40"
-                                  : "border-border/60 bg-background"
+                          : isSel ? "border-primary/50 bg-primary/5"
+                            : bookedByMe ? "border-border bg-muted/20"
+                              : blockedByOtherGroup ? "border-orange-200 bg-orange-50/50 dark:bg-orange-950/20 dark:border-orange-800/40"
+                                : "border-border/60 bg-background"
                           }`}
                       >
                         {/* Checkbox */}

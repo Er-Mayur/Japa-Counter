@@ -318,11 +318,11 @@ export const CgDatePickerModal = ({ scheduledDates, onSelect, onClose }: {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
       onClick={onClose}
     >
       <div
-        className="bg-card w-full max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl border border-border/60 overflow-hidden"
+        className="bg-card w-full max-w-sm rounded-2xl shadow-2xl border border-border/60 max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

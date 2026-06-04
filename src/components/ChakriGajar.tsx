@@ -522,7 +522,18 @@ export const ChakriGajar = ({ onActiveSlotChange }: { onActiveSlotChange?: (acti
         <CgCalendarScreen
           scheduledDates={events.map(e => e.date)}
           completedDates={[]}
-          onDateSelect={(d) => { setSelectedCalDate(d); setScreen("scheduleSummary"); }}
+          onDateSelect={(d) => {
+            const calEvent = events.find(e => e.date === d) ?? null;
+            setSelectedCalDate(d);
+            if (calEvent) {
+              setSelectedEvent(calEvent);
+              loadBookings(calEvent.id, calEvent.date);
+            } else {
+              setSelectedEvent(null);
+              setBookings([]);
+            }
+            setScreen("scheduleSummary");
+          }}
           onBack={goHome}
         />
       );
