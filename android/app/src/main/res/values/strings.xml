@@ -2,6 +2,6 @@
 <resources>
     <string name="app_name">Ganak</string>
     <string name="title_activity_main">Ganak</string>
-    <string name="package_name">com.ganak.ganak</string>
-    <string name="custom_url_scheme">com.ganak.ganak</string>
+    <string name="package_name">com.ganak.counter</string>
+    <string name="custom_url_scheme">com.ganak.counter</string>
 </resources>
